@@ -247,6 +247,15 @@ int main() {
     // PEVENT_DEVICE 45). With it the game expects physical controls.
     OnEvent(&jni, NULL, 1, 4, setting_xperiaPad ? 1 : 0, 0, 0);
 
+    // RT1 keeps PAndroidSystemManager::Init()'s generic key masks (RT2
+    // remaps them in CApplication::Init()): DPAD_CENTER is 0x10 (nitro),
+    // BUTTON_X/Y 0x20/0x80 (unused). Car::Update() reads 0x404 = accelerate
+    // and 0x208 = brake. Give Cross/Square/Triangle the port layout.
+    int *keymasks = sym("m_keymasks");
+    keymasks[23] = 0x400;  // DPAD_CENTER (Cross): accelerate, menu OK unchanged
+    keymasks[99] = 0x200;  // BUTTON_X (Square): brake
+    keymasks[100] = 0x10;  // BUTTON_Y (Triangle): nitro
+
     input_init((fuse_on_event_fn) OnEvent);
 
     l_info("Entering main loop.");

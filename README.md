@@ -67,17 +67,18 @@ Default layout (remappable, see below):
 
 | Vita input | In-game action |
 |---|---|
-| ✕ Cross / R trigger | Accelerate (OK in menus) |
+| ✕ Cross / R trigger | Accelerate (does nothing in menus) |
 | ■ Square / L trigger | Brake / reverse |
-| ▲ Triangle | Nitro / action |
+| ▲ Triangle | Nitro (**OK / confirm in menus**) |
 | ● Circle / Start | Back / pause |
-| D-Pad | Menus |
+| D-Pad | Menus; left/right steer |
+| L / R in menus | Switch page |
 | Left stick | Steering (emulated tilt; D-Pad in menus) |
 | Touch screen | Menus and HUD |
 | **Start + Select** | **PS Vita controls menu** |
 
 Steering follows the game's tilt mode: when a race uses tilt steering, the left stick
-emulates the accelerometer; choose *Tilt (motion)* in the controls menu (or set
+emulates the accelerometer (and doubles as the D-Pad otherwise); choose *Tilt (motion)* in the controls menu (or set
 `steering 1` in `config.txt`) to use the Vita's real motion sensor instead.
 
 ### Remapping

@@ -95,6 +95,7 @@ vector3f lights_attenuations[MAX_LIGHTS_NUM];
 vector4f light_global_ambient = {0.2f, 0.2f, 0.2f, 1.0f};
 shad_mode shading_mode = SMOOTH;
 GLboolean normalize = GL_FALSE;
+static GLboolean normal_matrix_stale = GL_TRUE; // modelview changed since the last normal matrix
 float current_shininess = 0.0f; // Current GL_SHININESS value (FIXME: This should be a vertex stream for immediate mode)
 
 // Fogging
@@ -1007,12 +1008,16 @@ uint8_t reload_ffp_shaders(SceGxmVertexAttribute *attrs, SceGxmVertexStream *str
 #ifndef HAVE_WVP_ON_GPU
 		matrix4x4_multiply(vgl_mvp_matrix, projection_matrix, modelview_matrix);
 #endif
-		// Recalculating normal matrix if necessary (TODO: This should be recalculated only when MV changes)
-		if (mask.lights_num > 0) {
-			recalculate_normal_matrix();
-		}
-
+		normal_matrix_stale = GL_TRUE;
 		mvp_modified = GL_FALSE;
+	}
+	// Raging Thunder: an unlit draw used to clear mvp_modified without
+	// recomputing the normal matrix, and NORMAL_MATRIX_UNIF was never flagged
+	// dirty, so lit meshes were shaded with another mesh's rotation.
+	if (normal_matrix_stale && mask.lights_num > 0) {
+		recalculate_normal_matrix();
+		flag_dirty_vert_unif(NORMAL_MATRIX_UNIF)
+		normal_matrix_stale = GL_FALSE;
 	}
 
 	// Uploading fragment shader uniforms

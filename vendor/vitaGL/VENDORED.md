@@ -535,3 +535,8 @@ index 512347a..d9e53e0 100644
 +#endif
  }
 ```
+
+- `source/ffp.c` (Raging Thunder 1): matriz de normales recalculada con un flag
+  propio (`normal_matrix_stale`) y `NORMAL_MATRIX_UNIF` marcado dirty al
+  recalcular. Antes un draw sin luces limpiaba `mvp_modified` y la matriz nunca se
+  re-subía salvo al cambiar de shader: iluminación saltando por tramos.

@@ -13,10 +13,13 @@ Instalación
 3. Abrir el juego. Las carpetas logs/ y saves/ se crean solas.
 
 Controles (por defecto, se pueden remapear)
-- Cruz            : acelerar / OK     - Cuadrado     : frenar / reversa
+- Cruz            : acelerar (en los menús no hace nada)
+- Cuadrado        : frenar / reversa
 - R / L           : acelerar / frenar (cambio de página en los menús)
-- Triángulo       : nitro / acción    - Círculo / Start : atrás / pausa
-- Cruceta         : menús             - Stick izquierdo : dirección (inclinación emulada)
+- Triángulo       : nitro / OK en los menús
+- Círculo / Start : atrás / pausa
+- Cruceta         : menús (izq/der también giran)
+- Stick izquierdo : dirección (inclinación emulada)
 - Pantalla táctil : menús y HUD
 - START + SELECT  : menú "PS Vita controls" (el juego se pausa)
     Cruz: cambiar botón   Cuadrado: agregar otro   Triángulo: borrar

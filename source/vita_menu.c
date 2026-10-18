@@ -23,6 +23,7 @@
 #include "utils/settings.h"
 
 #include <psp2/ctrl.h>
+#include <psp2/display.h>
 #include <psp2/kernel/processmgr.h>
 
 #include <stdio.h>
@@ -64,6 +65,7 @@ static int row_count;
 static int open, frozen;
 static int sel, scroll;
 static int capture;             // 0 off, 1 replace, 2 add
+static int dirty;               // the menu on screen is out of date
 static uint32_t prev_dirs;
 static uint64_t repeat_at;
 static uint64_t opened_at, paused_total;
@@ -107,6 +109,7 @@ void vita_menu_open(void) {
     overlay_capture_frame();
     audio_set_muted(1);
     capture = 0;
+    dirty = 1;
     prev_dirs = SCE_CTRL_UP | SCE_CTRL_DOWN | SCE_CTRL_LEFT | SCE_CTRL_RIGHT;
     if (sel < 0 || sel >= row_count)
         sel = 0;
@@ -158,6 +161,8 @@ static void restore_defaults(void) {
 void vita_menu_update(uint32_t held, uint32_t pressed) {
     if (!open)
         return;
+    if (pressed)
+        dirty = 1;
 
     if (capture) {
         if (pressed & SCE_CTRL_START) {
@@ -191,6 +196,8 @@ void vita_menu_update(uint32_t held, uint32_t pressed) {
         repeat_at = now + REPEAT_RATE;
     }
 
+    if (step)
+        dirty = 1;
     if (step & SCE_CTRL_UP)
         sel = (sel + row_count - 1) % row_count;
     else if (step & SCE_CTRL_DOWN)
@@ -291,6 +298,13 @@ static void text_center(float cx, float y, float scale, uint32_t col, const char
 void vita_menu_render(void) {
     if (!open)
         return;
+    // The CPU-drawn menu takes several vblanks to compose: redraw only when
+    // it changed, so buttons are polled every vblank (input lag otherwise).
+    if (!dirty) {
+        sceDisplayWaitVblankStart();
+        return;
+    }
+    dirty = 0;
 
     overlay_begin();
     if (!overlay_has_frame()) {

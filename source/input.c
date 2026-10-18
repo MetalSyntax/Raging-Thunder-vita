@@ -16,19 +16,21 @@
  *
  * Keys: OnEvent(1, 0, android_keycode, 0, pressed). The engine turns the
  * keycode into a menu key (m_keycodes[]) and a game action bit
- * (m_keymasks[]). Tables from PAndroidSystemManager::Init() plus the
- * overrides in CApplication::Init() (Xperia Play layout):
+ * (m_keymasks[]). Tables from PAndroidSystemManager::Init(); RT1 has no
+ * CApplication::Init() remap, so main.c sets the 23/99/100 masks itself
+ * (Car::Update: 0x404 accelerate, 0x208 brake, 0x10 nitro):
  *
  *   keycode                 menu key   action bit
  *   19..22 DPAD U/D/L/R     3/4/1/2    4/8/1/2
- *   23 DPAD_CENTER (Xperia X)  0x98    0x400
- *   99 BUTTON_X (Xperia Square)        0x200
- *   100 BUTTON_Y (Xperia Triangle) 0x15 0x10
+ *   23 DPAD_CENTER (Xperia X)  0x98    0x400 (main.c; engine: 0x10)
+ *   99 BUTTON_X (Xperia Square) 0x9b   0x200 (main.c; engine: 0x20)
+ *   100 BUTTON_Y (Xperia Triangle) 0x9c 0x10 (main.c; engine: 0x80)
  *   4 BACK (Xperia Circle)     8       0x40
  *   102/103 L1/R1              0xe/0xf 0x200/0x400
  *
  * so Cross/R share one action and Square/L the other, like on the Xperia
- * Play. The physical buttons are remappable (controls.txt / port menu):
+ * Play. In the menus Triangle (100) is OK and Cross (23) does nothing
+ * (confirmed on hardware). The physical buttons are remappable (controls.txt / port menu):
  * every action below sends one of these keycodes. START is not bindable: it
  * is the BACK key (sent on release) and, with SELECT, opens the port menu.
  *
@@ -121,9 +123,9 @@ enum { ACT_ACCELERATE, ACT_BRAKE, ACT_NITRO, ACT_BACK, ACT_L, ACT_R,
        ACT_UP, ACT_DOWN, ACT_LEFT, ACT_RIGHT, ACT_COUNT };
 
 static Action actions[ACT_COUNT] = {
-    [ACT_ACCELERATE] = { "ACCELERATE", "Accelerate / OK",       KEY_DPAD_CENTER, SCE_CTRL_CROSS },
+    [ACT_ACCELERATE] = { "ACCELERATE", "Accelerate",            KEY_DPAD_CENTER, SCE_CTRL_CROSS },
     [ACT_BRAKE]      = { "BRAKE",      "Brake / reverse",       KEY_BUTTON_X,    SCE_CTRL_SQUARE },
-    [ACT_NITRO]      = { "NITRO",      "Nitro / action",        KEY_BUTTON_Y,    SCE_CTRL_TRIANGLE },
+    [ACT_NITRO]      = { "NITRO",      "Nitro / OK (menus)",    KEY_BUTTON_Y,    SCE_CTRL_TRIANGLE },
     [ACT_BACK]       = { "BACK",       "Back / pause",          KEY_BACK,        SCE_CTRL_CIRCLE },
     [ACT_L]          = { "L",          "L: brake, menu page",   KEY_BUTTON_L1,   SCE_CTRL_LTRIGGER },
     [ACT_R]          = { "R",          "R: accel., menu page",  KEY_BUTTON_R1,   SCE_CTRL_RTRIGGER },
@@ -184,7 +186,11 @@ static void key_set(int keycode, int down) {
 static uint32_t buttons_held = 0;
 static int stick_dir_held[4] = {0}; // left, right, up, down via the stick
 static int start_combo;             // START held and used for START + SELECT
-static int start_tap;               // BACK pressed for START, released next frame
+static int start_tap;               // frames left holding BACK for a START tap
+
+// A one-frame BACK was sometimes missed by the game (START pausing only at
+// times); Circle, held for many frames, always worked.
+#define START_TAP_FRAMES 6
 
 /* --- touch ------------------------------------------------------------------ */
 
@@ -357,11 +363,9 @@ void input_update(void) {
     uint32_t released = buttons_held & ~buttons;
     buttons_held = buttons;
 
-    // BACK sent for a START tap last frame: release it now.
-    if (start_tap) {
+    // BACK held for a START tap: release it once the tap has lasted.
+    if (start_tap && --start_tap == 0)
         key_set(KEY_BACK, 0);
-        start_tap = 0;
-    }
 
     if (vita_menu_active()) {
         if (!(buttons & SCE_CTRL_START))
@@ -384,8 +388,9 @@ void input_update(void) {
     }
     if (released & SCE_CTRL_START) {
         if (!start_combo) {
-            key_set(KEY_BACK, 1);
-            start_tap = 1;
+            if (!start_tap)
+                key_set(KEY_BACK, 1);
+            start_tap = START_TAP_FRAMES;
         }
         start_combo = 0;
     }
@@ -556,9 +561,9 @@ void input_controls_save(void) {
         "#   SELECT, NONE. START is always back / pause.\n"
         "#\n"
         "# Actions:\n"
-        "#   ACCELERATE   Accelerate, OK in the menus\n"
+        "#   ACCELERATE   Accelerate (does nothing in the menus)\n"
         "#   BRAKE        Brake / reverse\n"
-        "#   NITRO        Nitro / action\n"
+        "#   NITRO        Nitro, OK in the menus\n"
         "#   BACK         Back / pause\n"
         "#   L, R         Shoulder keys: brake / accelerate in the race, page\n"
         "#                switch in the menus\n"

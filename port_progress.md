@@ -70,3 +70,17 @@ input Xperia Play + táctil + stick/acelerómetro, `saves/`, IME, red (sockets s
 sceNetInit), salida limpia, FPS/MSAA, menú START+SELECT, LiveArea/VPK final.
 Ver PORTING_PLAN.md secciones 4-5/10 y el `port_progress.md` del hermano
 (Pruebas 1-3, v1.1.0, v1.1.1) para los patrones ya resueltos.
+
+## v1.0.1 — reportes de testers (2026-10-16, sin probar en consola aún)
+- **Botones de carrera**: RT1 no remapea `m_keymasks` (RT2 sí, en
+  `CApplication::Init`); tabla de `PAndroidSystemManager::Init`: 23→0x10 (nitro),
+  99→0x20, 100→0x80 (sin uso). `Car::Update` lee 0x404 acelerar / 0x208 frenar.
+  Fix: `main.c` escribe `m_keymasks[23]=0x400, [99]=0x200, [100]=0x10` tras OnCreate.
+- **START a veces no pausa**: BACK duraba 1 frame; ahora se mantiene
+  `START_TAP_FRAMES` (6) frames (`input.c`).
+- **Sombras que cambian de golpe**: bug de vitaGL (`ffp.c`): un draw sin luces
+  consumía `mvp_modified` sin recalcular la matriz de normales, y
+  `NORMAL_MATRIX_UNIF` nunca se marcaba dirty → objetos iluminados
+  (`GL_LIGHTING`, `Track::Render`/`Car::Draw`) usaban la rotación de otro mesh.
+- **Lag en el menú START+SELECT**: el overlay se componía en CPU cada frame;
+  ahora solo redibuja cuando algo cambia (`vita_menu.c`).

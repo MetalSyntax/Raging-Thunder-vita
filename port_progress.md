@@ -71,7 +71,7 @@ sceNetInit), salida limpia, FPS/MSAA, menú START+SELECT, LiveArea/VPK final.
 Ver PORTING_PLAN.md secciones 4-5/10 y el `port_progress.md` del hermano
 (Pruebas 1-3, v1.1.0, v1.1.1) para los patrones ya resueltos.
 
-## v1.0.1 — reportes de testers (2026-10-16, sin probar en consola aún)
+## v1.0.1 — reportes de testers (2026-10-16, confirmado en consola)
 - **Botones de carrera**: RT1 no remapea `m_keymasks` (RT2 sí, en
   `CApplication::Init`); tabla de `PAndroidSystemManager::Init`: 23→0x10 (nitro),
   99→0x20, 100→0x80 (sin uso). `Car::Update` lee 0x404 acelerar / 0x208 frenar.
@@ -84,3 +84,13 @@ Ver PORTING_PLAN.md secciones 4-5/10 y el `port_progress.md` del hermano
   (`GL_LIGHTING`, `Track::Render`/`Car::Draw`) usaban la rotación de otro mesh.
 - **Lag en el menú START+SELECT**: el overlay se componía en CPU cada frame;
   ahora solo redibuja cuando algo cambia (`vita_menu.c`).
+
+## Parpadeo del fondo (2026-11-13, reporte de tester, confirmado en consola)
+- **Causa (por desensamblado)**: `Game::DrawRace` (0x7e674) y `Garage::Render` solo
+  llaman `glClear(0x100)` (depth); el color nunca se limpia en carrera. Los píxeles que
+  el cielo no cubre muestran frames viejos de los triple buffers de vitaGL → parpadeo.
+  `P3D::Clear` (menús) sí limpia color (0x4000).
+- **Fix**: `gl_swap()` (`glutil.c`) limpia color a negro tras cada `vglSwapBuffers`,
+  restaurando el clear color del motor.
+- Build: `lib/libc_bridge` declara `BYPRODUCTS` del stub (Ninja fallaba con
+  "missing and no known rule").

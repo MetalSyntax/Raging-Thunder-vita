@@ -48,6 +48,14 @@ void gl_init() {
 
 void gl_swap() {
     vglSwapBuffers(GL_FALSE);
+    // Game::DrawRace only clears depth (glClear(0x100)); sky gaps would show
+    // stale frames from vitaGL's triple buffers -> background flicker. Clear
+    // color to black at frame start, keeping the engine's clear color.
+    GLfloat c[4];
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, c);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(c[0], c[1], c[2], c[3]);
 }
 
 void glShaderSource_soloader(GLuint shader, GLsizei count,

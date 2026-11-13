@@ -1,5 +1,10 @@
 # Changelog — Raging Thunder (PS Vita)
 
+## v1.0.2 (2026-11-13)
+
+- Background flicker in races/garage: the engine only clears depth there, so
+  sky gaps showed stale frames. The color buffer is now cleared every frame.
+
 ## v1.0.1 (2026-10-17)
 
 Fixes from tester reports.
